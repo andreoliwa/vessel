@@ -60,7 +60,7 @@ services:
     mem_limit: "128m"
 
   zammad-init:
-    image: ghcr.io/zammad/zammad:7.0.0-0021
+    image: ghcr.io/zammad/zammad:7.1.1-0021
     container_name: zammad-init
     restart: "no"
     command: ["zammad-init"]
@@ -78,7 +78,7 @@ services:
         condition: service_healthy
 
   zammad-railsserver:
-    image: ghcr.io/zammad/zammad:7.0.0-0021
+    image: ghcr.io/zammad/zammad:7.1.1-0021
     container_name: zammad-railsserver
     restart: unless-stopped
     command: ["zammad-railsserver"]
@@ -97,7 +97,7 @@ services:
     mem_limit: "512m"
 
   zammad-scheduler:
-    image: ghcr.io/zammad/zammad:7.0.0-0021
+    image: ghcr.io/zammad/zammad:7.1.1-0021
     container_name: zammad-scheduler
     restart: unless-stopped
     command: ["zammad-scheduler"]
@@ -118,7 +118,7 @@ services:
     mem_limit: "512m"
 
   zammad-websocket:
-    image: ghcr.io/zammad/zammad:7.0.0-0021
+    image: ghcr.io/zammad/zammad:7.1.1-0021
     container_name: zammad-websocket
     restart: unless-stopped
     command: ["zammad-websocket"]
@@ -140,7 +140,7 @@ services:
     mem_limit: "384m"
 
   zammad-nginx:
-    image: ghcr.io/zammad/zammad:7.0.0-0021
+    image: ghcr.io/zammad/zammad:7.1.1-0021
     container_name: zammad-nginx
     restart: unless-stopped
     command: ["zammad-nginx"]
