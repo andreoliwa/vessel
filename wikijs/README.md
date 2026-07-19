@@ -5,7 +5,7 @@ Replacing [aviaryan/VSCodeNotebook: 📝 Use VS Code as a reliable note-taking/j
 
 1. Connect to the database container.
     ```bash
-    ca postgres connect
+    vessel postgres connect
     ```
 2. Create user/database:
     ```
@@ -15,7 +15,7 @@ Replacing [aviaryan/VSCodeNotebook: 📝 Use VS Code as a reliable note-taking/j
     ```
 3. Disconnect and connect as the WikiJS user:
     ```
-    ca postgres connect --user wikijs --password-env WIKIJS_PASSWORD --database wikijs
+    vessel postgres connect --user wikijs --password-env WIKIJS_PASSWORD --database wikijs
     ```
 4. Run this on the database:
     ```

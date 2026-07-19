@@ -5,7 +5,7 @@
 To dump a database on the backup dir, with date/time on the file name:
 
 ```bash
-ca --dry postgres dump [database_name]
+vessel --dry postgres dump [database_name]
 ```
 
 ## Restore a single database
@@ -35,7 +35,7 @@ copies the dump into the backup volume if needed, drops and recreates the databa
 and streams the restore — no manual steps required.
 
 ```bash
-ca postgres restore --file ~/redmine_2026-03-15-20-45-26.sql.gz \
+vessel postgres restore --file ~/redmine_2026-03-15-20-45-26.sql.gz \
     --database redmine_migration --role redmine --version 17
 ```
 

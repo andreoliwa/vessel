@@ -120,7 +120,7 @@ def restore(
     $BACKUP_DIR it will be copied there so the container can reach it.
 
     Example:
-        ca postgres restore --file ~/redmine_2026-03-15-20-45-26.sql.gz \
+        vessel postgres restore --file ~/redmine_2026-03-15-20-45-26.sql.gz \
             --database redmine_migration --role redmine --version 17
 
     """

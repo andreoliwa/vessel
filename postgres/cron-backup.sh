@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # To add this backup to the crontab:
 # - crontab -e
-# - Add this line: 0 5 * * * /root/container-apps/postgres/cron-backup.sh <DATABASE>
+# - Add this line: 0 5 * * * /root/vessel/postgres/cron-backup.sh <DATABASE>
 # - crontab -l
 
 # $HOME doesn't work in crontab, so we need to set it manually
@@ -26,11 +26,11 @@ set -e
 # This file has the environment variables needed to connect to the database
 # shellcheck source=/dev/null
 # TODO: fragile way of loading env vars in cron; this should be more robust and not a shell script
-source "$HOME_DIR/.config/shell.d/01-env-container-apps-my-den.sh"
+source "$HOME_DIR/.config/shell.d/01-env-vessel-my-den.sh"
 OUTPUT_SQL_FILE="${PG_BACKUP_DIR}/${DATABASE}_$(date "+%Y-%m-%d-%H-%M-%S").sql"
 echo "Dumping the database to ${OUTPUT_SQL_FILE}..."
 COMMAND="$(which docker) compose \
-    -f $HOME_DIR/container-apps/postgres/compose.yaml \
+    -f $HOME_DIR/vessel/postgres/compose.yaml \
     exec -T postgres14 pg_dump -U postgres $DATABASE"
 echo "Running command: $COMMAND"
 $COMMAND >"$OUTPUT_SQL_FILE"

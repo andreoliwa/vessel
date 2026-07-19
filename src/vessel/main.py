@@ -1,4 +1,4 @@
-"""Root `ca` CLI app."""
+"""Root `vessel` CLI app."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ def main(
     ctx: typer.Context,
     dry: bool = typer.Option(False, "--dry", "-R", help="Echo commands instead of running."),  # noqa: FBT003
 ) -> None:
-    """Dynamic Docker Compose CLI for container-apps with Click commands built from Invoke tasks."""
+    """Dynamic Docker Compose CLI for vessel with Click commands built from Invoke tasks."""
     global _dry_run  # noqa: PLW0603
     _dry_run = dry
     ctx.ensure_object(dict)
@@ -25,6 +25,6 @@ def get_dry() -> bool:
     return _dry_run
 
 
-from ca.discovery import discover_and_mount  # noqa: E402
+from vessel.discovery import discover_and_mount  # noqa: E402
 
 discover_and_mount(app)

@@ -24,11 +24,11 @@ _SIGINT_EXIT_CODE = 130  # Ctrl+C exit code (128 + SIGINT signal 2)
 
 
 def _compose_roots() -> list[Path]:
-    """Return dirs to search. Uses CONTAINER_APPS_ROOTS env var if set, else repo root."""
-    raw = os.environ.get("CONTAINER_APPS_ROOTS", "")
+    """Return dirs to search. Uses VESSEL_ROOTS env var if set, else repo root."""
+    raw = os.environ.get("VESSEL_ROOTS", "")
     if raw.strip():
         return [Path(p).expanduser() for p in raw.split(":") if p.strip()]
-    # src/ca/discovery.py → src/ca/ → src/ → repo root
+    # src/vessel/discovery.py → src/vessel/ → src/ → repo root
     return [Path(__file__).parent.parent.parent]
 
 
@@ -52,7 +52,7 @@ def _find_compose_dirs(roots: list[Path]) -> list[Path]:
 def _load_module(path: Path) -> types.ModuleType:
     """Import a Python file by absolute path as an anonymous module."""
     # Qualify with parent dir name to avoid stem collisions (e.g. two tasks.py files)
-    module_name = f"ca._dynamic.{path.parent.name}.{path.stem}"
+    module_name = f"vessel._dynamic.{path.parent.name}.{path.stem}"
     spec = importlib.util.spec_from_file_location(module_name, path)
     mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
@@ -64,7 +64,7 @@ def _extra_click_commands(app_dir: Path) -> list[click.Command]:
 
     Priority: cli.py > tasks.py. Within cli.py: Typer app > @task functions.
     """
-    from ca.main import get_dry
+    from vessel.main import get_dry
 
     def ctx_factory() -> object:
         return invoke_context(dry_run=get_dry())
@@ -108,7 +108,7 @@ def _register_compose_commands(group: click.Group, compose_file: str) -> None:
     """Register the generic Docker Compose commands on a Click group."""
 
     def _ctx() -> object:
-        from ca.main import get_dry
+        from vessel.main import get_dry
 
         return invoke_context(dry_run=get_dry())
 
@@ -178,13 +178,16 @@ def _make_patched_get_command(
 
     def _patched(typer_instance: typer.Typer) -> click.BaseCommand:
         click_cmd = original(typer_instance)
-        if typer_instance is root_app and isinstance(click_cmd, click.Group):
+        # Typer 0.27 uses its own Click-compatible TyperGroup, which is no
+        # longer a subclass of click.Group. Both group implementations expose
+        # add_command() and commands, so rely on that interface instead.
+        if typer_instance is root_app and hasattr(click_cmd, "add_command"):
             for grp in groups:
                 if grp.name not in click_cmd.commands:
                     click_cmd.add_command(grp)
         return click_cmd
 
-    setattr(_patched, "_ca_patched", True)  # noqa: B010
+    setattr(_patched, "_vessel_patched", True)  # noqa: B010
     return _patched
 
 
@@ -203,7 +206,7 @@ def discover_and_mount(root_app: typer.Typer) -> None:
 
     import typer.main as typer_main
 
-    if getattr(typer_main.get_command, "_ca_patched", False):
+    if getattr(typer_main.get_command, "_vessel_patched", False):
         return
 
     typer_main.get_command = _make_patched_get_command(root_app, groups, typer_main.get_command)  # type: ignore[assignment]

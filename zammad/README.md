@@ -221,10 +221,10 @@ button in the UI. The only way to correct a note is via a direct database update
 
 ```bash
 # Find the article
-ca postgres connect zammad --version 17 --psql --command="SELECT id, body FROM ticket_articles WHERE ticket_id = <TICKET_ID> ORDER BY id;"
+vessel postgres connect zammad --version 17 --psql --command="SELECT id, body FROM ticket_articles WHERE ticket_id = <TICKET_ID> ORDER BY id;"
 
 # Update it
-ca postgres connect zammad --version 17 --psql --command="UPDATE ticket_articles SET body = '<corrected text>' WHERE id = <ARTICLE_ID>;"
+vessel postgres connect zammad --version 17 --psql --command="UPDATE ticket_articles SET body = '<corrected text>' WHERE id = <ARTICLE_ID>;"
 ```
 
 ### Search delay after migration

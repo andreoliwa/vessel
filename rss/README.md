@@ -67,7 +67,7 @@ Reddit, and more — and lets me rank by **my keywords**, not social popularity.
 
     ```bash
     # Required for all modes
-    export CONTAINER_APPS_DATA_DIR=~/data/
+    export VESSEL_DATA_DIR=~/data/
     export TTRSS_DB_NAME=ttrss
     export TTRSS_DB_USER=ttrss
     export TTRSS_DB_PASS=<your-secure-password>
@@ -100,7 +100,7 @@ Reddit, and more — and lets me rank by **my keywords**, not social popularity.
 1. **Run the database setup**:
 
     ```bash
-    ca rss setup --database
+    vessel rss setup --database
     ```
 
     This will:
@@ -111,8 +111,8 @@ Reddit, and more — and lets me rank by **my keywords**, not social popularity.
 2. **Start TT-RSS stack** (choose your mode):
 
     ```bash
-    ca rss up         # normal mode (production)
-    ca rss up --dev   # OR dev mode (local development)
+    vessel rss up         # normal mode (production)
+    vessel rss up --dev   # OR dev mode (local development)
     ```
 
 3. **Access TT-RSS** on http://localhost:8002/tt-rss
@@ -145,19 +145,19 @@ This setup supports two modes of operation:
 **Starting the stack:**
 
 ```bash
-ca rss up
+vessel rss up
 ```
 
 **Stopping the stack:**
 
 ```bash
-ca rss down
+vessel rss down
 ```
 
 **Updating the stack:**
 
 ```bash
-ca rss up --pull   # stops, pulls latest images, starts
+vessel rss up --pull   # stops, pulls latest images, starts
 ```
 
 **Installing the vf_scored plugin (Normal Mode):**
@@ -165,7 +165,7 @@ ca rss up --pull   # stops, pulls latest images, starts
 The `vf_scored` plugin can be installed using:
 
 ```bash
-ca rss setup --plugin
+vessel rss setup --plugin
 ```
 
 This will clone the plugin from GitHub into the running container at `/var/www/html/tt-rss/plugins.local/vf_scored`.
@@ -189,19 +189,19 @@ Alternatively, you can use TT-RSS's built-in plugin installer through the web UI
 **Starting the stack:**
 
 ```bash
-ca rss up --dev
+vessel rss up --dev
 ```
 
 **Stopping the stack:**
 
 ```bash
-ca rss down
+vessel rss down
 ```
 
 **Updating the stack (sync fork, rebuild):**
 
 ```bash
-ca rss up --dev --pull   # syncs fork, stops, pulls, builds, starts
+vessel rss up --dev --pull   # syncs fork, stops, pulls, builds, starts
 ```
 
 **Installing plugins in Dev Mode:**
@@ -218,7 +218,7 @@ The `vf_scored` plugin should already be cloned at `${TTRSS_REPO_DIR}/plugins.lo
 ### Configured Plugins
 
 - [vf_scored](https://github.com/andreoliwa/tt-rss-plugin-vf-scored) - Custom keyword-based scoring plugin (available in
-  dev mode, installable in normal mode via `ca rss setup --plugin`)
+  dev mode, installable in normal mode via `vessel rss setup --plugin`)
 - [ttrss-af-notifications](https://github.com/supahgreg/ttrss-af-notifications) - Adds a filter action to receive
   JavaScript-based notifications
 
@@ -254,13 +254,13 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
 1. Export feeds as OPML: **Preferences → Feeds → OPML export**.
 2. Stop the stack:
     ```bash
-    ca rss down
+    vessel rss down
     ```
 3. Back up the database (source server).
     - Follow the dump instructions in [the PostgreSQL container](../postgres/README.md):
 
     ```bash
-    ca postgres dump ttrss --version 17
+    vessel postgres dump ttrss --version 17
     ```
 
     - The list of recent dump files with timestamps will be displayed.
@@ -268,7 +268,7 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
 4. Back up config and RSSHub environment (source server)
 
     ```bash
-    tar --no-xattrs -czf ~/Downloads/ttrss-config.tar.gz -C ${CONTAINER_APPS_DATA_DIR}/rss config
+    tar --no-xattrs -czf ~/Downloads/ttrss-config.tar.gz -C ${VESSEL_DATA_DIR}/rss config
     ```
 
     - RSSHub is stateless — its configuration lives entirely in environment variables inside `rss/compose.yaml` (e.g.
@@ -284,7 +284,7 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
     ```
 7. Create the TT-RSS database and user:
     ```bash
-    ca rss setup --database
+    vessel rss setup --database
     ```
 8. Restore the database dump (new server)
     - Follow the restore instructions in [the PostgreSQL container](../postgres/README.md).
@@ -293,15 +293,15 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
         2. Connect to the container and drop/recreate the database if it already has tables.
         3. Restore:
         ```bash
-        ca postgres connect ttrss --version 17 --psql --command="\i /path/to/dump.sql"
+        vessel postgres connect ttrss --version 17 --psql --command="\i /path/to/dump.sql"
         # or directly via docker exec:
         docker exec -i postgres17 psql -U postgres ttrss < /path/to/dump.sql
         ```
 9. Restore config data (new server)
 
     ```bash
-    mkdir -p ${CONTAINER_APPS_DATA_DIR}/rss
-    tar -xzf ttrss-config.tar.gz -C ${CONTAINER_APPS_DATA_DIR}/rss
+    mkdir -p ${VESSEL_DATA_DIR}/rss
+    tar -xzf ttrss-config.tar.gz -C ${VESSEL_DATA_DIR}/rss
     ```
 
     - RSSHub config is already in `rss/compose.yaml` (transferred in step 2). Redis will repopulate itself on first use.
@@ -321,8 +321,8 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
 11. Start the RSS stack (new server)
 
     ```bash
-    ca rss up         # normal/production mode
-    ca rss up --dev   # dev mode (requires TTRSS_REPO_DIR)
+    vessel rss up         # normal/production mode
+    vessel rss up --dev   # dev mode (requires TTRSS_REPO_DIR)
     ```
 
     - Verify at `https://news.yourdomain.tld/tt-rss`. Re-enable plugins under **Preferences → Plugins**.
@@ -332,7 +332,7 @@ See the [Usage Modes](#usage-modes) section above for detailed instructions on s
 - Some RSSHub routes (Twitter/X, Instagram, YouTube) may require **proxies, cookies, or tokens** to be reliable due to
   rate limits and anti-bot measures.
 - Keep Redis enabled for caching; it reduces load and speeds up feeds.
-- Back up volumes: `${CONTAINER_APPS_DATA_DIR}/rss/{config,redis}`, `${TTRSS_REPO_DIR}`, and PostgreSQL database.
+- Back up volumes: `${VESSEL_DATA_DIR}/rss/{config,redis}`, `${TTRSS_REPO_DIR}`, and PostgreSQL database.
 - Export OPML from TTRSS for feed portability.
 - TT-RSS uses rolling releases (no semantic versioning), so `latest` tag is safe to use.
 

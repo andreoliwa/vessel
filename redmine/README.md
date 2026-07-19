@@ -52,4 +52,4 @@ Alternatively, leave the file in place but set `imap_project` to a blank/invalid
 8. Spin up Redmine with `redmine up` or `redmine up -d`
 9. Wait for the server to come up, then [login with the default admin/admin user/pass](https://github.com/docker-library/docs/tree/master/redmine#accessing-the-application) or with an existing user
 10. Start using Redmine: Change the password, create users, create projects...
-11. Make sure the backups are working and running on the crontab: `~/container-apps/redmine/backup_redmine.sh`
+11. Make sure the backups are working and running on the crontab: `~/dev/me/vessel/redmine/backup_redmine.sh`

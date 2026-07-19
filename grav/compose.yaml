@@ -17,6 +17,6 @@ services:
       - "127.0.0.1:8007:80"
     volumes:
       # Persistent data: Grav installation, plugins, themes, user data
-      - ${CONTAINER_APPS_DATA_DIR}/grav:/config
+      - ${VESSEL_DATA_DIR}/grav:/config
     cpus: "0.5"
     mem_limit: "512m"

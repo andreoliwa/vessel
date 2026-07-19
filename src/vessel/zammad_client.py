@@ -1,8 +1,8 @@
 """Zammad REST API client.
 
-Shared by container-apps' own Invoke tasks and by external projects
-that add container-apps as a uv editable path dependency and
-import this module as ``ca.zammad_client``.
+Shared by vessel' own Invoke tasks and by external projects
+that add vessel as a uv editable path dependency and
+import this module as ``vessel.zammad_client``.
 """
 
 from __future__ import annotations

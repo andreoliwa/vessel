@@ -18,7 +18,7 @@ import tomllib
 from conjuring.grimoire import ask_yes_no, lazy_env_variable, print_error, print_warning
 from invoke import Context, Exit, task
 
-from ca.zammad_client import ZammadAPI, ZammadAPIError
+from vessel.zammad_client import ZammadAPI, ZammadAPIError
 
 # --- Constants ---
 
@@ -63,8 +63,8 @@ PENDING_STATE_TYPES = {_StateType.PENDING_REMINDER.value, _StateType.PENDING_ACT
 
 
 def _compose_file(_c: Context) -> str:
-    container_apps_dir = os.environ.get("CONTAINER_APPS_DIR", "~/dev/me/container-apps")
-    return f"-f {Path(container_apps_dir).expanduser()}/zammad/compose.yaml"
+    vessel_dir = os.environ.get("VESSEL_DIR", "~/dev/me/vessel")
+    return f"-f {Path(vessel_dir).expanduser()}/zammad/compose.yaml"
 
 
 def _load_toml() -> dict:

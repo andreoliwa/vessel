@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
     volumes:
       - app:/var/www/html
-      - ${CONTAINER_APPS_DATA_DIR}/rss/config:/opt/tt-rss/config.d:ro
+      - ${VESSEL_DATA_DIR}/rss/config:/opt/tt-rss/config.d:ro
     networks:
       - postgres17
       - ttrss
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
     volumes:
       - app:/var/www/html
-      - ${CONTAINER_APPS_DATA_DIR}/rss/config:/opt/tt-rss/config.d:ro
+      - ${VESSEL_DATA_DIR}/rss/config:/opt/tt-rss/config.d:ro
     networks:
       - postgres17
       - ttrss
@@ -119,7 +119,7 @@ services:
     container_name: ttrss-redis
     restart: unless-stopped
     volumes:
-      - ${CONTAINER_APPS_DATA_DIR}/rss/redis:/data
+      - ${VESSEL_DATA_DIR}/rss/redis:/data
     networks:
       - ttrss
     cpus: "0.2"

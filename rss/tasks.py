@@ -7,9 +7,9 @@ from pathlib import Path
 from conjuring.grimoire import lazy_env_variable, print_error, print_normal
 from invoke import Context, Exit, task
 
-_CONTAINER_APPS_DIR = os.environ.get("CONTAINER_APPS_DIR", "~/dev/me/container-apps")
-_COMPOSE_BASE = f"-f {Path(_CONTAINER_APPS_DIR).expanduser()}/rss/compose.yaml"
-_COMPOSE_DEV = f"{_COMPOSE_BASE} -f {Path(_CONTAINER_APPS_DIR).expanduser()}/rss/compose.override.dev.yaml"
+_VESSEL_DIR = os.environ.get("VESSEL_DIR", "~/dev/me/vessel")
+_COMPOSE_BASE = f"-f {Path(_VESSEL_DIR).expanduser()}/rss/compose.yaml"
+_COMPOSE_DEV = f"{_COMPOSE_BASE} -f {Path(_VESSEL_DIR).expanduser()}/rss/compose.override.dev.yaml"
 
 
 def _compose_flags(dev: bool) -> str:
@@ -59,9 +59,9 @@ def rss_setup(c: Context, database: bool = False, plugin: bool = False) -> None:
     if not database and not plugin:
         print_error("At least one flag is required: --database or --plugin")
         print("\nUsage:")
-        print("  ca rss setup --database         # Set up database and directories")
-        print("  ca rss setup --plugin           # Install vf_scored plugin")
-        print("  ca rss setup --database --plugin # Do both")
+        print("  vessel rss setup --database         # Set up database and directories")
+        print("  vessel rss setup --plugin           # Install vf_scored plugin")
+        print("  vessel rss setup --database --plugin # Do both")
         raise Exit(code=1)
 
     if database:
@@ -76,7 +76,7 @@ def _setup_database(c: Context) -> None:
     db_user = os.environ.get("TTRSS_DB_USER", "ttrss")
     db_pass = lazy_env_variable("TTRSS_DB_PASS", "TT-RSS database password")
     dry = _dry(c)
-    data_dir_path = Path(lazy_env_variable("CONTAINER_APPS_DATA_DIR", "Container apps data directory")).expanduser()
+    data_dir_path = Path(lazy_env_variable("VESSEL_DATA_DIR", "Container apps data directory")).expanduser()
 
     print_normal("Step 1: Starting PostgreSQL 17...", dry=dry)
     c.run("cd postgres && docker compose up -d postgres17")
@@ -96,7 +96,7 @@ def _setup_database(c: Context) -> None:
 
     print_normal("\nTT-RSS database setup complete!", dry=dry)
     print_normal("\nNext steps:", dry=dry)
-    print_normal("  1. ca rss up", dry=dry)
+    print_normal("  1. vessel rss up", dry=dry)
     print_normal("  2. Open http://localhost:8002/tt-rss", dry=dry)
     print_normal("  3. Login with admin credentials and enable plugins in Preferences.", dry=dry)
 
@@ -115,7 +115,7 @@ def _install_plugin(c: Context) -> None:
     if not result or container_name not in result.stdout:
         print_error(f"Container '{container_name}' is not running!")
         print("\nPlease start the RSS stack first:")
-        print("  ca rss up")
+        print("  vessel rss up")
         raise Exit(code=1)
 
     print_normal(f"Container {container_name} is running", dry=dry)

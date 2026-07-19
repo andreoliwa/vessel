@@ -19,7 +19,7 @@ invoke setup-grav
 
 This will:
 
-1. Create the data directory at `${CONTAINER_APPS_DATA_DIR}/grav`
+1. Create the data directory at `${VESSEL_DATA_DIR}/grav`
 2. Start the Grav container
 3. Wait for initialization
 4. Install the following themes:
@@ -78,7 +78,7 @@ docker exec -it -w /app/www/public grav bin/gpm selfupgrade -y
 
 ## Data Persistence
 
-All Grav data is stored in `${CONTAINER_APPS_DATA_DIR}/grav`:
+All Grav data is stored in `${VESSEL_DATA_DIR}/grav`:
 
 - `/config/www` - Grav installation files
 - `/config/www/user` - Your content, themes, plugins, and configuration

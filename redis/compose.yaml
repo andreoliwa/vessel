@@ -1,4 +1,4 @@
-# Shared Redis instance for container-apps services
+# Shared Redis instance for vessel services
 # Mirrors the postgres/ pattern: named volume, named network, consumers declare external
 #
 # DB index allocation (Redis supports 16 DBs, 0–15):

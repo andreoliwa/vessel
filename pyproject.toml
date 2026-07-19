@@ -3,10 +3,10 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "ca"
+name = "vessel"
 requires-python = ">=3.11"
 version = "0.1.0"
-description = "Dynamic Docker Compose CLI for container-apps with Click commands built from Invoke tasks"
+description = "Dynamic Docker Compose CLI for vessel with Click commands built from Invoke tasks"
 dependencies = [
   "conjuring",
   "invoke",
@@ -14,10 +14,10 @@ dependencies = [
 ]
 
 [project.scripts]
-ca = "ca.main:app"
+vessel = "vessel.main:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ca"]
+packages = ["src/vessel"]
 
 [tool.ruff]
 fix = true

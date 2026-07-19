@@ -16,8 +16,8 @@ IMMICH_DIR = Path(__file__).parent
 
 
 def _compose_file(_c: Context) -> str:
-    container_apps_dir = os.environ.get("CONTAINER_APPS_DIR", "~/dev/me/container-apps")
-    return f"-f {Path(container_apps_dir).expanduser()}/immich/compose.yaml"
+    vessel_dir = os.environ.get("VESSEL_DIR", "~/dev/me/vessel")
+    return f"-f {Path(vessel_dir).expanduser()}/immich/compose.yaml"
 
 
 @task
@@ -31,13 +31,11 @@ def immich_setup(c: Context) -> None:
     lazy_env_variable("IMMICH_DB_PASSWORD", "Immich PostgreSQL password")
 
     print("Step 1: Ensuring redis is running...")
-    c.run("cd ~/dev/me/container-apps/redis && docker compose up -d")
+    c.run("cd ~/dev/me/vessel/redis && docker compose up -d")
 
     print("\nStep 2: Creating library data directory...")
     library_dir = (
-        Path(lazy_env_variable("CONTAINER_APPS_DATA_DIR", "Container apps data directory")).expanduser()
-        / "immich"
-        / "library"
+        Path(lazy_env_variable("VESSEL_DATA_DIR", "Container apps data directory")).expanduser() / "immich" / "library"
     )
     library_dir.mkdir(parents=True, exist_ok=True)
     print(f"  Created: {library_dir}")
@@ -51,7 +49,7 @@ def immich_setup(c: Context) -> None:
 @task(help={"pull": "Pull latest Immich image before starting"})
 def immich_up(c: Context, pull: bool = False, logs: bool = False) -> None:
     """Start Redis, then the Immich stack (immich-db starts automatically)."""
-    c.run("ca redis up")
+    c.run("vessel redis up")
 
     cf = _compose_file(c)
 
@@ -92,9 +90,7 @@ def immich_dump(c: Context, output_dir: str = "") -> None:
 def immich_rsync(c: Context, output_dir: str = "") -> None:
     """Rsync Immich library media to the backup directory."""
     src = (
-        Path(lazy_env_variable("CONTAINER_APPS_DATA_DIR", "Container apps data directory")).expanduser()
-        / "immich"
-        / "library"
+        Path(lazy_env_variable("VESSEL_DATA_DIR", "Container apps data directory")).expanduser() / "immich" / "library"
     )
 
     if output_dir:
@@ -122,7 +118,7 @@ def immich_restore(c: Context, host: str = "", input_dir: str = "") -> None:
     import sys
 
     if not host:
-        print("ERROR: --host is required (e.g. ca immich restore --host FX777YD7FHMac)")
+        print("ERROR: --host is required (e.g. vessel immich restore --host FX777YD7FHMac)")
         sys.exit(1)
 
     if input_dir:
