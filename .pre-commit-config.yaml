@@ -25,17 +25,17 @@ repos:
         # https://docs.openstack.org/bashate/latest/man/bashate.html#options
         args: [-i, E006]
   - repo: https://github.com/google/keep-sorted
-    rev: v0.8.0
+    rev: v0.9.1
     hooks:
       - id: keep-sorted
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.10
+    rev: v0.15.22
     hooks:
       - id: ruff-format
       - id: ruff-check
         args: [--fix]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.20.0
+    rev: v2.3.0
     hooks:
       - id: mypy
         additional_dependencies:
@@ -49,7 +49,7 @@ repos:
       - id: toml-sort-fix
         exclude: uv.lock
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.13.10
+    rev: v4.16.5
     hooks:
       - id: commitizen
         stages: [commit-msg]
