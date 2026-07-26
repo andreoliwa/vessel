@@ -25,7 +25,7 @@ dependencies = [
 requires-dist = [
     { name = "conjuring", editable = "../conjuring" },
     { name = "invoke" },
-    { name = "typer" },
+    { name = "typer", specifier = "<0.26" },
 ]
 
 [[package]]
