@@ -29,7 +29,7 @@ volumes:
 
 services:
   zammad-elasticsearch:
-    image: elasticsearch:8.17.0
+    image: elasticsearch:9.4.1
     container_name: zammad-elasticsearch
     restart: unless-stopped
     environment:
