@@ -1,4 +1,4 @@
-FROM redmine:5
+FROM redmine:7
 WORKDIR /usr/src/redmine
 
 COPY ./configuration.yml config/configuration.yml
