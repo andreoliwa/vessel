@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
+import threading
+import time
 from enum import StrEnum
 from http import HTTPStatus
 from pathlib import Path
@@ -15,6 +18,7 @@ if TYPE_CHECKING:
 
 import tomllib
 
+from click import ClickException
 from conjuring.grimoire import ask_yes_no, lazy_env_variable, print_error, print_warning
 from invoke import Context, Exit, task
 
@@ -36,6 +40,7 @@ MIGRATION_MAP_GROUP_KEY = "redmine_import"
 # Docker exec prefixes (avoids repetition across c.run() calls)
 _PG17 = "docker exec postgres17 psql -U postgres"
 _RAILS = "docker exec zammad-railsserver bundle exec"
+_EXIT_CODE_KILLED = 137
 
 # Sentinel key for the synthetic Redmine status custom field.
 _REDMINE_STATUS_CF_KEY = "__redmine_status__"
@@ -286,12 +291,123 @@ def zammad_wipe(c: Context, drop: bool = False) -> None:
     _wipe_via_db(migration_map, dry_run)
 
 
-@task
-def zammad_reindex(c: Context) -> None:
-    """Rebuild the Zammad Elasticsearch search index."""
-    _import_mode_off(c)
+def _elasticsearch_reindex_progress() -> str:
+    """Return a compact Elasticsearch status line for a reindex progress update."""
+    health = subprocess.run(
+        [
+            "docker",
+            "exec",
+            "zammad-elasticsearch",
+            "curl",
+            "--fail",
+            "--silent",
+            "http://localhost:9200/_cluster/health?filter_path=status,active_primary_shards,unassigned_shards",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if health.returncode:
+        return "Elasticsearch status unavailable"
+
+    try:
+        details = json.loads(health.stdout)
+    except json.JSONDecodeError:
+        return "Elasticsearch returned an invalid status response"
+
+    return (
+        "Elasticsearch: "
+        f"status={details.get('status', 'unknown')}, "
+        f"active primary shards={details.get('active_primary_shards', 0)}, "
+        f"unassigned shards={details.get('unassigned_shards', 0)}"
+    )
+
+
+def _reindex_failure_message(output: str, exit_code: int) -> str:
+    """Return the most useful concise error from a failed reindex command."""
+    if exit_code == _EXIT_CODE_KILLED:
+        return "The command was killed (exit 137), usually because the host ran out of memory."
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    markers = ("error", "exception", "failed", "unable to", "rake aborted", "killed")
+    for line in reversed(lines):
+        if any(marker in line.lower() for marker in markers):
+            return line
+
+    return f"The command exited with code {exit_code}."
+
+
+def _run_reindex_step(c: Context, description: str, command: str) -> None:
+    """Run a setup step and report a concise failure instead of an Invoke traceback."""
+    result = c.run(command, warn=True, hide=True)
+    if result.ok:
+        return
+
+    message = _reindex_failure_message(f"{result.stdout}\n{result.stderr}", result.exited)
+    error = f"{description} failed: {message}"
+    raise ClickException(error)
+
+
+@task(
+    help={
+        "progress_interval": "Seconds between Elasticsearch progress updates (default: 5)",
+        "clear_read_only_block": "Clear Elasticsearch's flood-stage read-only block before rebuilding",
+    }
+)
+def zammad_reindex(c: Context, progress_interval: int = 5, clear_read_only_block: bool = False) -> None:
+    """Rebuild the Zammad Elasticsearch search index with live cluster status."""
+    if progress_interval < 1:
+        message = "progress_interval must be at least 1 second."
+        raise ClickException(message)
+
+    _import_mode_off(c, graceful=True)
+    if clear_read_only_block:
+        print("Clearing Elasticsearch's read-only index block...")
+        _run_reindex_step(
+            c,
+            "Clearing Elasticsearch's read-only index block",
+            "docker exec zammad-elasticsearch curl -fsS "
+            "-X PUT 'http://localhost:9200/_all/_settings' "
+            "-H 'Content-Type: application/json' "
+            "-d '{\"index.blocks.read_only_allow_delete\": null}'",
+        )
     print("Rebuilding Zammad Elasticsearch index...")
-    c.run(f"{_RAILS} rake zammad:searchindex:rebuild")
+    if c.config.run.dry:
+        c.run(f"{_RAILS} rake zammad:searchindex:rebuild")
+        return
+
+    process = subprocess.Popen(  # noqa: S602
+        f"{_RAILS} rake zammad:searchindex:rebuild",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    output: list[str] = []
+
+    def _collect_output() -> None:
+        if process.stdout is not None:
+            output.extend(process.stdout)
+
+    output_thread = threading.Thread(target=_collect_output)
+    output_thread.start()
+    try:
+        while process.poll() is None:
+            print(_elasticsearch_reindex_progress())
+            time.sleep(progress_interval)
+    except KeyboardInterrupt:
+        process.terminate()
+        process.wait()
+        raise
+    finally:
+        output_thread.join()
+
+    if process.returncode:
+        message = _reindex_failure_message("".join(output), process.returncode)
+        error = f"Zammad Elasticsearch reindex failed: {message}"
+        raise ClickException(error)
+
+    print("".join(output), end="")
     print("✅ Reindex complete. Search results may take a few minutes to reflect all tickets.")
 
 
@@ -418,11 +534,18 @@ def _import_mode_on(c: Context) -> None:
     c.run(f"{_RAILS} rails r \"Setting.set('system_init_done', false)\"")
 
 
-def _import_mode_off(c: Context) -> None:
+def _import_mode_off(c: Context, *, graceful: bool = False) -> None:
     print("Disabling import mode...")
-    c.run(f"{_RAILS} rails r \"Setting.set('import_mode', false)\"")
-    c.run(f"{_RAILS} rails r \"Setting.set('system_init_done', true)\"")
-    c.run(f'{_RAILS} rails r "Rails.cache.clear"')
+    steps = (
+        ("Disabling Zammad import mode", f"{_RAILS} rails r \"Setting.set('import_mode', false)\""),
+        ("Marking Zammad initialization complete", f"{_RAILS} rails r \"Setting.set('system_init_done', true)\""),
+        ("Clearing the Zammad Rails cache", f'{_RAILS} rails r "Rails.cache.clear"'),
+    )
+    for description, command in steps:
+        if graceful:
+            _run_reindex_step(c, description, command)
+        else:
+            c.run(command)
 
 
 # --- Migration internals ---

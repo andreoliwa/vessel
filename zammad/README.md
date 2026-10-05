@@ -17,10 +17,10 @@ export ZAMMAD_DB_PASSWORD=<password>
 
 ```bash
 # Create database and user
-invoke zammad-setup
+vessel zammad setup
 
 # Start the stack
-invoke zammad-up
+vessel zammad up
 
 # Open http://localhost:8008
 ```
@@ -28,10 +28,11 @@ invoke zammad-up
 ## Usage
 
 ```bash
-invoke zammad-up              # Start and follow logs
-invoke zammad-up --pull       # Pull latest images first
-invoke zammad-down            # Stop
-invoke zammad-fetch-emails    # Force immediate email fetch from all channels
+vessel zammad up              # Start and follow logs
+vessel zammad up --pull       # Pull latest images first
+vessel zammad down            # Stop
+vessel zammad fetch-emails    # Force immediate email fetch from all channels
+vessel zammad reindex         # Rebuild search with Elasticsearch status every 5 seconds
 ```
 
 ## Architecture
@@ -54,7 +55,7 @@ docker exec zammad-railsserver bundle exec rails r \
 ```
 
 The relevant entry is `Check channels. (30s)`. Changing it requires a direct DB update and would be reset on the next
-`zammad-init` run (e.g. during upgrades). Use `invoke zammad-fetch-emails` for a one-off immediate fetch.
+`zammad-init` run (e.g. during upgrades). Use `vessel zammad fetch-emails` for a one-off immediate fetch.
 
 30s polling is not a meaningful resource concern: IMAP polling is IO-bound (open TCP connection, issue `IDLE`/`STATUS`,
 close). CPU usage is negligible. The real resource consumers in this stack are Elasticsearch and the Rails server, both
@@ -144,7 +145,7 @@ filter by specific state or custom criteria.
 
 ## Migration from Redmine
 
-Migration is implemented as an invoke task.
+Migration is implemented as a Vessel command.
 
 ### Configuration
 
@@ -168,10 +169,10 @@ export ZAMMAD_TOKEN=<token>
 
 ```bash
 # Run the migration (import mode is enabled/disabled automatically)
-invoke zammad-migrate
+vessel zammad migrate
 
 # Rebuild the search index after migration
-invoke zammad-reindex
+vessel zammad reindex
 ```
 
 All credentials can be passed as flags (`--redmine-db-pass`, `--zammad-token`) or via `POSTGRES_PASSWORD` /
@@ -180,9 +181,9 @@ All credentials can be passed as flags (`--redmine-db-pass`, `--zammad-token`) o
 ### Re-importing from scratch
 
 ```bash
-invoke zammad-wipe     # deletes all imported tickets, users, groups, custom fields
-invoke zammad-migrate  # import mode toggled automatically
-invoke zammad-reindex
+vessel zammad wipe     # deletes all imported tickets, users, groups, custom fields
+vessel zammad migrate  # import mode toggled automatically
+vessel zammad reindex
 ```
 
 ### Post-migration verification checklist
@@ -198,7 +199,7 @@ After running the migration, verify the following manually in the Zammad UI:
 - [ ] Journal notes appear as articles on tickets
 - [ ] Tickets are assigned to the correct tracker sub-group (e.g. `Redmine Import::Issue Type`)
 - [ ] Parent/child ticket links are visible on tickets that had a parent issue in Redmine
-- [ ] Search returns results after `invoke zammad-reindex` completes
+- [ ] Search returns results after `vessel zammad reindex` completes
 - [ ] [Set up Gmail/email integration channel](#setting-up-gmail-as-an-email-channel) and test some use cases:
     - [ ] Create a ticket via email
     - [ ] Reply to a ticket via email
@@ -230,10 +231,24 @@ vessel postgres connect zammad --version 17 --psql --command="UPDATE ticket_arti
 ### Search delay after migration
 
 Elasticsearch takes several minutes to index all tickets after a migration. During this time, full-text search may
-return no results or partial results — this is normal. To trigger reindexing manually:
+return no results or partial results - this is normal. To trigger reindexing manually:
 
 ```bash
-invoke zammad-reindex
+vessel zammad reindex
 ```
 
-You can monitor Elasticsearch indexing progress at `http://localhost:9200/_cat/indices?v`.
+The command reports Elasticsearch health and shard counts every 5 seconds. Set a different interval when needed:
+
+```bash
+vessel zammad reindex --progress_interval 5
+```
+
+Elasticsearch needs enough disk space to allocate its primary shards. Do not retry a failed rebuild while the host is
+above Elasticsearch's disk watermarks. Free disk space first. If Elasticsearch set a flood-stage read-only block, clear
+it as part of the next rebuild:
+
+```bash
+vessel zammad reindex --clear_read_only_block
+```
+
+This flag is for recovery only. Do not use it routinely because it bypasses Elasticsearch's disk-protection mechanism.
