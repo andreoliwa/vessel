@@ -71,4 +71,4 @@ max-complexity = 10
 "zammad/tasks.py" = ["ANN001", "ANN401", "BLE001", "C901", "PERF203", "PLR0912", "PLR0913", "PLR0915", "S603", "S607"]
 
 [tool.uv.sources]
-conjuring = {path = "../conjuring", editable = true}
+conjuring = { path = "../conjuring", editable = true }
