@@ -10,6 +10,7 @@ description = "Dynamic Docker Compose CLI for vessel with Click commands built f
 dependencies = [
   "conjuring",
   "invoke",
+  "pillow>=13.0.0",
   # Typer 0.26 vendors Click. Dynamic commands use Click directly, so newer
   # Typer releases make nested help exit with a traceback and omit options
   # from shell completion.
