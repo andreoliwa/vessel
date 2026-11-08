@@ -1,0 +1,20 @@
+services:
+  homebox:
+    image: sysadminsmedia/homebox:latest
+    restart: on-failure
+    # Private local secret file, intentionally ignored by Git.
+    env_file:
+      - .env
+    ports:
+      # The upstream container port is not published by default; bind it only to loopback for local use.
+      - "127.0.0.1:8009:7745"
+    environment:
+      # The image has no timezone default; use the local timezone for displayed timestamps.
+      TZ: Europe/Berlin
+    volumes:
+      # The image has no host persistence by default; keep SQLite state and uploads outside this repository.
+      - ${VESSEL_DATA_DIR:?VESSEL_DATA_DIR must be set}/homebox:/data
+    # No resource ceiling is set upstream; limit it to a quarter CPU.
+    cpus: "0.25"
+    # No memory ceiling is set upstream; limit it to 256 MiB.
+    mem_limit: 256m
