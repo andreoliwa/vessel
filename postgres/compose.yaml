@@ -43,7 +43,8 @@ services:
       - "5432"
     # https://docs.docker.com/compose/compose-file/#/ports
     ports:
-      - "7714:5432"
+      # Previously published on all interfaces; keep host tools local and block public access.
+      - "127.0.0.1:7714:5432"
     # Use a separate volume that is persisted even if the container is deleted
     volumes:
       - postgres14:/var/lib/postgresql/data
@@ -83,7 +84,8 @@ services:
       - "5432"
     # https://docs.docker.com/compose/compose-file/#/ports
     ports:
-      - "7717:5432"
+      # Previously published on all interfaces; keep host tools local and block public access.
+      - "127.0.0.1:7717:5432"
     # Use a separate volume that is persisted even if the container is deleted
     volumes:
       - postgres17:/var/lib/postgresql/data

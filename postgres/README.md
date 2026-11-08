@@ -1,5 +1,16 @@
 # PostgreSQL
 
+## Network access
+
+Host ports bind only to localhost: `127.0.0.1:7714` for PostgreSQL 14 and
+`127.0.0.1:7717` for PostgreSQL 17. Local tools keep working; remote clients
+must use an SSH tunnel. Containers use `postgres14:5432` or `postgres17:5432`
+on their shared Docker networks, independent of the host port bindings.
+
+After changing these bindings, recreate the database containers to apply them.
+This briefly interrupts database connections; restarting or rebooting alone
+does not apply Compose changes. Keep the existing volumes and image versions.
+
 ## Dump a single database
 
 To dump a database on the backup dir, with date/time on the file name:
