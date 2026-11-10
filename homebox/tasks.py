@@ -19,7 +19,6 @@ from uuid import UUID
 import click
 from invoke import Context, task
 from invoke.exceptions import Exit
-from PIL import Image, ImageOps
 
 from vessel import homebox
 from vessel.homebox import HomeBoxAPI, HomeBoxError
@@ -162,6 +161,11 @@ def _attachment_plan(item: dict[str, Any], item_id: str) -> list[tuple[dict[str,
 
 def _write_photo(data: bytes, destination: Path) -> None:
     """Keep oriented image pixels while dropping embedded metadata from copies."""
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        message = "Photo export requires Pillow; reinstall Vessel with its declared dependencies."
+        raise HomeBoxError(message) from None
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)

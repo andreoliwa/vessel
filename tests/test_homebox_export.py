@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 import io
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -251,6 +252,11 @@ class ExportItemTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
         self.assertEqual(list(self.root.iterdir()), [keep])
         self.assertEqual(keep.read_text(), "Keep this")
+
+    def test_missing_pillow_fails_cleanly_without_a_partial_export(self) -> None:
+        with patch.dict(sys.modules, {"PIL": None}), self.assertRaisesRegex(HomeBoxError, "Pillow"):
+            export_items(self.api, [ITEM_ID], self.output)
+        self.assertEqual(list(self.root.iterdir()), [])
 
     def test_invalid_image_never_publishes_a_partial_package(self) -> None:
         self.api.attachments[PHOTO_ID] = b"not an image"

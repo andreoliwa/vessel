@@ -7,7 +7,10 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -30,6 +33,37 @@ class ExportCommandTests(unittest.TestCase):
         self.runner = CliRunner()
         self.command = typer.main.get_command(app)
         self.arguments = ["homebox", "export", "--item", ITEM_ID, "--output", str(self.output)]
+
+    def test_commands_load_without_pillow(self) -> None:
+        script = textwrap.dedent("""\
+            import builtins
+            original_import = builtins.__import__
+            def without_pillow(name, *args, **kwargs):
+                if name == "PIL" or name.startswith("PIL."):
+                    raise ModuleNotFoundError("No module named 'PIL'", name="PIL")
+                return original_import(name, *args, **kwargs)
+            builtins.__import__ = without_pillow
+            from vessel.main import app
+            app()
+            """)
+        environment = os.environ.copy()
+        environment["VESSEL_ROOTS"] = str(Path(__file__).resolve().parents[1])
+        for arguments in (
+            ["homebox", "export", "--help"],
+            ["--dry", "homebox", "browse"],
+            ["--dry", *self.arguments],
+        ):
+            with self.subTest(arguments=arguments):
+                result = subprocess.run(  # noqa: S603
+                    [sys.executable, "-c", script, *arguments],
+                    env=environment,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn("could not load", result.stderr)
+        self.assertFalse(self.output.exists())
 
     def test_help_lists_options_and_browse(self) -> None:
         result = self.runner.invoke(self.command, ["homebox", "export", "--help"])
