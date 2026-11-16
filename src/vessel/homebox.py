@@ -148,6 +148,23 @@ class HomeBoxAPI:
             raise HomeBoxError(message)
         return item
 
+    def list_maintenance(self) -> list[dict[str, Any]]:
+        """Read all scheduled maintenance from the unpaginated global endpoint."""
+        data = self._read("maintenance?status=scheduled", "maintenance")
+        try:
+            entries = json.loads(data)
+        except (ValueError, UnicodeError):
+            message = "HomeBox returned invalid maintenance JSON; check the API response format."
+            raise HomeBoxError(message) from None
+        if not isinstance(entries, list) or any(not isinstance(entry, dict) for entry in entries):
+            message = "HomeBox returned an invalid maintenance list."
+            raise HomeBoxError(message)
+        return entries
+
+    def item_url(self, item_id: str) -> str:
+        """Build an item link on the configured HomeBox instance."""
+        return f"{self._base_url}/item/{_item_id(item_id)}"
+
     def read_attachment(self, item_id: str, attachment_id: str) -> bytes:
         """Read a native attachment without trusting URLs from item metadata."""
         path = f"entities/{_item_id(item_id)}/attachments/{_item_id(attachment_id)}"

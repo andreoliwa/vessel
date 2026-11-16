@@ -461,6 +461,7 @@ dependencies = [
     { name = "conjuring" },
     { name = "invoke" },
     { name = "pillow" },
+    { name = "rich" },
     { name = "typer" },
 ]
 
@@ -469,5 +470,6 @@ requires-dist = [
     { name = "conjuring", editable = "../conjuring" },
     { name = "invoke" },
     { name = "pillow", specifier = ">=13.0.0" },
+    { name = "rich" },
     { name = "typer", specifier = "<0.26" },
 ]

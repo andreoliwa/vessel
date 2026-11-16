@@ -234,6 +234,23 @@ class HomeBoxAPITests(unittest.TestCase):
         self.environment.start()
         self.addCleanup(self.environment.stop)
 
+    def test_maintenance_reader_uses_global_scheduled_endpoint(self) -> None:
+        records = [
+            {
+                "id": "22222222-2222-4222-8222-222222222222",
+                "itemID": "11111111-1111-4111-8111-111111111111",
+                "itemName": "Example item",
+                "name": "Example maintenance",
+                "description": "Check item.",
+                "cost": "0",
+                "scheduledDate": "2026-03-02",
+                "completedDate": "",
+            }
+        ]
+        type(self).response_body = json.dumps(records).encode()
+        self.assertEqual(HomeBoxAPI(base_url=self.url).list_maintenance(), records)
+        self.assertEqual(self.requests, [("GET", "/api/v1/maintenance?status=scheduled", "Bearer synthetic-token")])
+
     def test_list_items_reads_every_page_with_authentication(self) -> None:
         first = {"id": "11111111-1111-4111-8111-111111111111", "tags": []}
         second = {"id": "77777777-7777-4777-8777-777777777777", "tags": [{"name": "sell"}]}

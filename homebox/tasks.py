@@ -10,7 +10,9 @@ import re
 import tempfile
 import warnings
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
+from json import dumps
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -282,6 +284,67 @@ def export_items(api: HomeBoxAPI, item_ids: list[str], output_directory: str | P
 def browse(c: Context) -> None:
     """Browse HomeBox."""
     c.run("open http://localhost:8009")
+
+
+def due_maintenance_rows(api: HomeBoxAPI, today: date) -> list[tuple[str, str, str, str]]:
+    """Select incomplete maintenance due by the local date, oldest first."""
+    rows = []
+    for entry in api.list_maintenance():
+        scheduled = entry.get("scheduledDate")
+        if entry.get("completedDate") or not scheduled:
+            continue
+        try:
+            due = date.fromisoformat(scheduled)
+        except (TypeError, ValueError):
+            message = "HomeBox returned an invalid maintenance date; expected YYYY-MM-DD."
+            raise HomeBoxError(message) from None
+        if due > today:
+            continue
+        title = entry.get("itemName")
+        if not isinstance(title, str) or not title.strip():
+            message = "HomeBox returned maintenance without a valid item title."
+            raise HomeBoxError(message)
+        days = (today - due).days
+        overdue = "Today" if days == 0 else f"{days} day{'s' if days != 1 else ''}"
+        rows.append((api.item_url(entry.get("itemID", "")), " ".join(title.split()), due.isoformat(), overdue))
+    return sorted(rows, key=lambda row: (row[2], row[1], row[0]))
+
+
+@task(name="maintenance-due", help={"json": "Print JSON instead of a table."})
+def maintenance_due(c: Context, json: bool = False) -> None:
+    """List incomplete maintenance due today or earlier, oldest first."""
+    if c.config.run.dry:
+        click.echo("[DRY-RUN] Would list due HomeBox maintenance; no requests made.", err=json)
+        if json:
+            click.echo("[]")
+        return
+    try:
+        rows = due_maintenance_rows(homebox.HomeBoxAPI(), date.today())  # noqa: DTZ011 - Use the local calendar date.
+    except HomeBoxError as error:
+        raise click.ClickException(str(error)) from None
+    except Exit:
+        message = "Set HOMEBOX_API_KEY to your HomeBox API key."
+        raise click.ClickException(message) from None
+    if json:
+        keys = ("item_url", "item_title", "maintenance_date", "overdue")
+        click.echo(dumps([dict(zip(keys, row, strict=True)) for row in rows], ensure_ascii=False, indent=2))
+        return
+    if not rows:
+        click.echo("No maintenance due.")
+        return
+    from rich.console import Console
+    from rich.style import Style
+    from rich.table import Table
+    from rich.text import Text
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Item link", style="cyan", overflow="fold")
+    table.add_column("Item title", overflow="fold")
+    table.add_column("Maintenance date", no_wrap=True)
+    table.add_column("Overdue", no_wrap=True)
+    for row in rows:
+        table.add_row(Text(row[0], style=Style(link=row[0])), *(Text(value) for value in row[1:]))
+    Console().print(table)
 
 
 @task(
