@@ -17,7 +17,7 @@ networks:
 # https://registry.hub.docker.com/_/postgres
 services:
   postgres14:
-    image: postgres:14
+    image: postgres:19
     restart: unless-stopped
     container_name: postgres14
     # Those are also the default values, left here for clarity. This will be the superuser.
@@ -58,7 +58,7 @@ services:
     shm_size: "256m"
 
   postgres17:
-    image: postgres:17.2
+    image: postgres:19.0
     restart: unless-stopped
     container_name: postgres17
     # Those are also the default values, left here for clarity. This will be the superuser.
